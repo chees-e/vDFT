@@ -2,11 +2,11 @@
 
 ## Intro
 
-This is a remake of a project I made in 2021 as a part of an music transcription app. When I made it, I used a linear approximation of sine to perform the transform. As you can imagine, it was inconsistent. This version uses parabolic approximation which should give a better transcription.
+This is a remake of a project I made in 2021 as a part of a music transcription app. When I made it, I used a linear approximation of sine to perform the transformation. As you can imagine, it was inconsistent. This version uses parabolic approximation which should give a better transcription.
 
-## Addressing Challanges
+## Addressing Challenges
 
-There were two main challanges I faced in this project:
+There were two main challenges I faced in this project:
 
 1. Representation of float.
 2. Implementation of sine.
@@ -20,13 +20,13 @@ Sine is also tricky, but I will demonstrate how to arrive at a good approximatio
 
 ## Limitations
 
-This DFT only works with 44.1kHz sample rate audios (it will still produce a result for other sample rates, but the results will be either pitched up or down). This is due to the requirement for pre-caculation due to verilog's limited ability to perform division. Which also means, adding a division module can provide a lot more freedom to this module (potentially turning this into a general purpose DFT).
+This DFT only works with 44.1kHz sample rate audios (it will still produce a result for other sample rates, but the results will be either pitched up or down). This is due to the requirement for pre-calculation due to verilog's limited ability to perform division. This also means, adding a division module can provide a lot more freedom to this module (potentially turning this into a general-purpose DFT).
 
-The output inverval can be any power of 2 seconds (0.25s, 0.5s, 1s, 2s...). But the shorter the inverval is, the more inaccurate the DFT is. This parameter can be used to adapt to the pace of the music.
+The output interval can be any power of 2 seconds (0.25s, 0.5s, 1s, 2s...). But the shorter the interval is, the more inaccurate the DFT is. This parameter can be used to adapt to the pace of the music.
 
 The period of sine has to be rounded to an integer, and thus for higher frequencies notes the sine will be out of sync as the transform goes on.
 
-Another major downside with this approach is that it uses a lot wires to store various data. A lot of other restrictions must be added to control the number of wires required, for example: the analog input wave must also be adjusted to be between [-1000, 1000].
+Another major downside of this approach is that it uses a lot of wires to store various data. A lot of other restrictions must be added to control the number of wires required, for example, the analog input wave must also be adjusted to be between [-1000, 1000].
 
 ## Set Up
 
@@ -65,7 +65,7 @@ where $N$ is number of samples per output (${\omega'}$), and $k$ is each individ
 
 $\sin(\frac{2\pi k n}{N}) \approx a [\frac{2\pi k n}{N}] ^ 2 + b [\frac{2\pi k n}{N}]+ c = a[\frac{4\pi^2 k^2 n^2}{N^2}] + b[\frac{2\pi k n}{N}] + c = a' n^2 + b'n + c$
 
-for $ 0 \leq n \leq \frac{N}{2k}$, where:
+for $0 \leq n \leq \frac{N}{2k}$, where:
 
 $a' = -[\frac{60(12-\pi^2)}{\pi^5}]\cdot[\frac{4\pi^2 k^2}{(\omega \cdot 2^{-p+1})^2}] = -[\frac{60(12-\pi^2)}{\pi^3}]\cdot[\frac{k^2}{\omega^2}] \cdot 2^{2p}$
 
@@ -89,7 +89,7 @@ module sinx(input signed [10:0] xn, input [9:0] n, input [26:0] ya, input [26:0]
     assign out = product[34:24];
 endmodule
 ```
-The size of the buses are determined as follows:
+The sizes of the buses are determined as follows:
 
 - $x_n$: range $[-1000, 1000]$ means $lg(1000) < 10$, so $10$ bit $+ 1$ sign bit is enough.
 - $n$: we need to manually control $n$ to be between $0$ and $\frac{N}{2k}$, the maximum value in this case would be the lowest note A0 (smallest $k$): $lg(\frac{44100}{2\cdot 27.5}) < 10$.
@@ -108,9 +108,9 @@ We also need to store $\gamma a'$ and $\gamma b'$ for all $k$, this requires two
 
 There is one extra bus we need to store the $\frac{N}{k}$ values to reset $n$ (see next section). This requires $11 \times 88 = 968$ bits.
 
-As for output, we need to add them up. Employing similar strategy, we can store each individual sum in one big bus. My estimation is that $27$ bits should be enough, so our busses will be $27 \times 88 = 2376$ bits long. That can be subjected to optimization.
+As for output, we need to add them up. Employing a similar strategy, we can store each individual sum in one big bus. My estimation is that $27$ bits should be enough, so our busses will be $27 \times 88 = 2376$ bits long. That can be subjected to optimization.
 
-We do want to perform DFT for all frequencies $k$ simutaneously for speed and to avoid repeating inputs. To do so, we can utilize the `generate` block to instantiate all the sinx modules and the summation modules/registers.
+We do want to perform DFT for all frequencies $k$ simultaneously for speed and to avoid repeating inputs. To do so, we can utilize the `generate` block to instantiate all the sinx modules and the summation modules/registers.
 
 ## n Adjustments
 
@@ -124,7 +124,7 @@ After summing up sine and cosine, we need to find the absolute value of their su
 
 ## Afterword 
 
-I have included the file with all the modules as well as testbench generation for testing. This project again, is not a general purpose DFT: it has a lot of limitation and is designed to perform note recognition. It does have to potential to be a general purpose DFT if a division module is implemented so that the coefficients can be calculated in real time and don't require a large amout of wires.
+I have included the file with all the modules as well as testbench generation for testing. This project again, is not a general-purpose DFT: it has a lot of limitations and is designed to perform note recognition. It does have to potential to be a general-purpose DFT if a division module is implemented so that the coefficients can be calculated in real-time and don't require a large amount of wires.
 
 Thank you so much for being here, have a nice day
 
